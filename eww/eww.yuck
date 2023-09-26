@@ -1,0 +1,212 @@
+(defvar iconcpu "")
+(defvar iconnetwork "")
+(defvar iconvolumesource "")
+(defvar iconvolumesink "")
+(defvar iconbattery "")
+(defvar separator "/")
+(defvar cpu-reveal false)
+(defvar network-reveal false)
+(defvar volume-reveal false)
+(defvar battery-reveal false)
+(defvar date-reveal false)
+(deflisten _CURRENTWORKSPACEID :initial `1`
+  `./scripts/currentworkspaceid.sh`)
+(deflisten _ACTIVEWORKSPACES :initial `{}`
+  `./scripts/activeworkspaces.sh`)
+(deflisten _NETWORK :initial `{"status":"disconnected","ssid":""}`
+  `./scripts/network.sh`)
+(deflisten _VOLUME :initial `{"sink": {"left": "5", "right": "5", "mute": "yes"}, "source": {"left": "5", "right": "5", "mute": "yes"}}`
+  `./scripts/volume.sh`)
+(defpoll _DATE :interval `1s`
+  `date "+%a %d %b"`)
+(defpoll _TIME :interval `1s`
+  `date "+%H:%M"`)
+
+(defwindow statusbar :monitor 0
+                     :geometry (geometry :x "0%"
+                                         :y "0%"
+                                         :width "100%"
+                                         :height "20px"
+                                         :anchor "top center")
+                     :stacking "fg"
+                     :exclusive true
+                     :focusable false
+  (statusbar))
+
+(defwidget statusbar []
+  (box :orientation "h"
+       :halign "fill"
+       :space-evenly true
+    (left)
+    (right)))
+
+(defwidget left []
+  (box :class "left"
+       :orientation "h"
+       :space-evenly false
+       :halign "start"
+    (workspaces)
+    (separator)))
+
+(defwidget right []
+  (box :class "right"
+       :orientation "h"
+       :space-evenly false
+       :halign "end"
+    (progresscpu :icon {iconcpu}
+                 :cpu {EWW_CPU}
+                 :ram {EWW_RAM})
+    (separator)
+    (progressnetwork :icon {iconnetwork}
+                     :network {_NETWORK}
+                     :updown {EWW_NET})
+    (separator)
+    (progressvolume :iconsink {iconvolumesink}
+                    :iconsource {iconvolumesource}
+                    :volume {_VOLUME})
+    (separator)
+    (progressbattery :icon {iconbattery}
+                     :battery {EWW_BATTERY})
+    (separator)
+    (time :time {_TIME}
+          :date {_DATE})))
+
+(defwidget workspaces []
+  (box :class "workspaces"
+       :orientation "h"
+       :space-evenly true
+    (workspace :id "1")
+    (workspace :id "2")
+    (workspace :id "3")
+    (workspace :id "4")
+    (workspace :id "5")
+    (workspace :id "6")
+    (workspace :id "7")
+    (workspace :id "8")
+    (workspace :id "9")
+    (workspace :id "10")))
+
+(defwidget workspace [id]
+  (box :class "${id == _CURRENTWORKSPACEID ? 'currentworkspace' : ''} \
+               ${_ACTIVEWORKSPACES?.[id] != "null" ? 'activeworkspaces' : ''}"
+       :orientation "h"
+       :width 35
+    (button :onclick "hyprctl dispatch workspace ${id}" id)))
+
+(defwidget progresscpu [icon cpu ram]
+  (eventbox :onclick "eww update cpu-reveal=true"
+            :onhoverlost "eww update cpu-reveal=false"
+  (box :class "progresscpu progressfull"
+       :orientation "h"
+       :space-evenly false
+    (revealer :transition "slideright"
+              :reveal cpu-reveal
+              :duration "450ms"
+      "")
+    (icon :value {icon})
+    (stackedprogressbar :value1 {cpu.avg <= 50 ? cpu.avg * 2 : 100}
+                        :value2 {ram.used_mem_perc}
+                        :value3 {cpu.avg > 50 ? (cpu.avg - 50) * 2 : 0}))))
+
+(defwidget progressnetwork [icon network updown]
+  (eventbox :onclick "eww update network-reveal=true"
+            :onhoverlost "eww update network-reveal=false"
+    (box :class "progressnetwork progressfull"
+         :orientation "h"
+         :space-evenly false
+      (revealer :transition "slideright"
+                :reveal network-reveal
+                :duration "450ms"
+        "")
+      (icon :value {icon})
+      (stackedprogressbar :value1 {network.status != "connected" ? 100 : 0}
+                          :value2 {network.status == "connected" ? 100 : 0}
+                          :value3 {network.status == "disconnected" ? 100 : 0}))))
+
+(defwidget progressvolume [iconsink iconsource volume]
+  (eventbox :onclick "eww update volume-reveal=true"
+            :onhoverlost "eww update volume-reveal=false"
+    (box :class "progressvolume progressfull"
+         :orientation "h"
+         :space-evenly false
+      (revealer :transition "slideright"
+                :reveal volume-reveal
+                :duration "450ms"
+        (box :orientation "h"
+             :space-evenly false
+          (icon :value {iconsource})
+          (stackedprogressbar :value1 {volume.source.mute == "yes" ? 100 : 0}
+                              :value2 {(volume.source.left + volume.source.right) / 2}
+                              :value3 {volume.source.mute == "yes" ? 100 : 0})))
+      (icon :value {iconsink})
+      (stackedprogressbar :value1 {volume.sink.mute == "yes" ? 100 : 0}
+                          :value2 {(volume.sink.left + volume.sink.right) / 2}
+                          :value3 {volume.sink.mute == "yes" ? 100 : 0}))))
+
+(defwidget progressbattery [icon battery]
+  (eventbox :onclick "eww update battery-reveal=true"
+            :onhoverlost "eww update battery-reveal=false"
+    (box :class "progressbattery progressfull"
+         :orientation "h"
+         :space-evenly false
+      (revealer :transition "slideright"
+                :reveal battery-reveal
+                :duration "450ms"
+        (text :value "${battery.BAT0.capacity}%"))
+      (icon :value {icon})
+      (stackedprogressbar :value1 {battery.BAT0.status != "Discharging" ? 100 : 0}
+                          :value2 {battery.BAT0.capacity}
+                          :value3 {battery.BAT0.status == "Charging" ? 100 : 0}))))
+
+(defwidget time [time date]
+  (eventbox :onhover "eww update date-reveal=true"
+            :onhoverlost "eww update date-reveal=false"
+    (box :class "time"
+         :orientation "h"
+         :space-evenly false
+      (revealer :transition "slideright"
+                :reveal date-reveal 
+                :duration "450ms"
+        (text :value {date}))
+      (text :value {time}))))
+
+(defwidget stackedprogressbar [value1 value2 value3]
+  (box :class "stackedprogressbar"
+       :orientation "v"
+       :valign "center"
+       :space-evenly true
+       :height 15
+    (smallprogressbar :value {value1})
+    (progressbar :value {value2})
+    (smallprogressbar :value {value3})))
+
+(defwidget smallprogressbar [value]
+  (box :class "progressbar smallprogressbar"
+       :orientation "h"
+       :halign "center"
+       :valign "center"
+    (progress :value value)))
+
+(defwidget progressbar [value]
+  (box :class "progressbar"
+       :orientation "h"
+       :valign "center"
+    (progress :value value)))
+
+(defwidget icon [value]
+  (box :class "icon"
+       :orientation "h"
+       :width 25
+    (label :text value)))
+
+(defwidget text [value]
+  (box :class "text" 
+       :orientation "h"
+    (label :text value
+           :limit-width 20)))
+
+(defwidget separator []
+  (box :class "separator"
+       :orientation "h"
+       :width 20
+    (label :text separator)))

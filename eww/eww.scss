@@ -1,0 +1,81 @@
+* {
+  all: unset;
+}
+
+.statusbar {
+  all: unset;
+  font-family: JetBrains Mono;
+  font-weight: bold;
+  color: #F1F1F1;
+  background-color: #282828;
+}
+
+.icon {
+  all: unset;
+  font-size: 10px;
+}
+.text {
+  all: unset;
+  font-size: 12px;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+.separator {
+  all: unset;
+  font-size: 12px;
+  color: #313131;
+}
+
+.workspaces {
+  all: unset;
+  font-size: 12px;
+  color: #4e4e4e;
+}
+.workspaces button:hover {
+  all: unset;
+  background-color: #D35D6E;
+}
+.activeworkspaces {
+  all: unset;
+  color: #F1F1F1;
+}
+.currentworkspace {
+  all: unset;
+  color: #D35D6E;
+}
+
+.progressbar {
+  all: unset;
+  padding-right: 8px;
+}
+.progressbar trough {
+  all: unset;
+  background-color: #4e4e4e;
+  border-radius: 10px;
+  min-width: 70px;
+  min-height: 2px;
+}
+.progressbar progress {
+  all: unset;
+  background-color: #D35D6E;
+  border-radius: 10px;
+  min-height: 2px;
+}
+.smallprogressbar trough {
+  min-width: 20px;
+  min-height: 1px;
+}
+.smallprogressbar progress {
+  min-height: 1px;
+}
+.smallprogressbar:first-child trough {
+  margin-right: 17px;
+  margin-top: 1px;
+}
+.smallprogressbar:last-child trough {
+  margin-left: 17px;
+  margin-bottom: 1px;
+}
+.progressfull {
+  padding-left: 1px;
+}
